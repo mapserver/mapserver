@@ -887,7 +887,7 @@ shapeObj *msGEOSBuffer(shapeObj *shape, double width)
   g1 = (GEOSGeom) shape->geometry;
   if(!g1) return NULL;
 
-  g2 = GEOSBuffer_r(handle,g1, width, 30);
+  g2 = GEOSBuffer_r(handle, g1, width, 30);
   return msGEOSGeometry2Shape(g2);
 #else
   msSetError(MS_GEOSERR, "GEOS support is not available.", "msGEOSBuffer()");
@@ -910,7 +910,7 @@ shapeObj *msGEOSSimplify(shapeObj *shape, double tolerance)
   g1 = (GEOSGeom) shape->geometry;
   if(!g1) return NULL;
 
-  g2 = GEOSSimplify_r(handle,g1, tolerance);
+  g2 = GEOSSimplify_r(handle, g1, tolerance);
   return msGEOSGeometry2Shape(g2);
 #else
   msSetError(MS_GEOSERR, "GEOS Simplify support is not available.", "msGEOSSimplify()");
@@ -933,7 +933,7 @@ shapeObj *msGEOSTopologyPreservingSimplify(shapeObj *shape, double tolerance)
   g1 = (GEOSGeom) shape->geometry;
   if(!g1) return NULL;
 
-  g2 = GEOSTopologyPreserveSimplify_r(handle,g1, tolerance);
+  g2 = GEOSTopologyPreserveSimplify_r(handle, g1, tolerance);
   return msGEOSGeometry2Shape(g2);
 #else
   msSetError(MS_GEOSERR, "GEOS Simplify support is not available.", "msGEOSTopologyPreservingSimplify()");
@@ -954,7 +954,7 @@ shapeObj *msGEOSConvexHull(shapeObj *shape)
   g1 = (GEOSGeom) shape->geometry;
   if(!g1) return NULL;
 
-  g2 = GEOSConvexHull_r(handle,g1);
+  g2 = GEOSConvexHull_r(handle, g1);
   return msGEOSGeometry2Shape(g2);
 #else
   msSetError(MS_GEOSERR, "GEOS support is not available.", "msGEOSConvexHull()");
@@ -975,7 +975,7 @@ shapeObj *msGEOSBoundary(shapeObj *shape)
   g1 = (GEOSGeom) shape->geometry;
   if(!g1) return NULL;
 
-  g2 = GEOSBoundary_r(handle,g1);
+  g2 = GEOSBoundary_r(handle, g1);
   return msGEOSGeometry2Shape(g2);
 #else
   msSetError(MS_GEOSERR, "GEOS support is not available.", "msGEOSBoundary()");
@@ -998,7 +998,7 @@ pointObj *msGEOSGetCentroid(shapeObj *shape)
   g1 = (GEOSGeom) shape->geometry;
   if(!g1) return NULL;
 
-  g2 = GEOSGetCentroid_r(handle,g1);
+  g2 = GEOSGetCentroid_r(handle, g1);
   if (!g2) return NULL;
 
   point = (pointObj *) malloc(sizeof(pointObj));
@@ -1037,7 +1037,7 @@ shapeObj *msGEOSUnion(shapeObj *shape1, shapeObj *shape2)
   g2 = (GEOSGeom) shape2->geometry;
   if(!g2) return NULL;
 
-  g3 = GEOSUnion_r(handle,g1, g2);
+  g3 = GEOSUnion_r(handle, g1, g2);
   return msGEOSGeometry2Shape(g3);
 #else
   msSetError(MS_GEOSERR, "GEOS support is not available.", "msGEOSUnion()");
@@ -1064,7 +1064,7 @@ shapeObj *msGEOSIntersection(shapeObj *shape1, shapeObj *shape2)
   g2 = (GEOSGeom) shape2->geometry;
   if(!g2) return NULL;
 
-  g3 = GEOSIntersection_r(handle,g1, g2);
+  g3 = GEOSIntersection_r(handle, g1, g2);
   return msGEOSGeometry2Shape(g3);
 #else
   msSetError(MS_GEOSERR, "GEOS support is not available.", "msGEOSIntersection()");
@@ -1091,7 +1091,7 @@ shapeObj *msGEOSDifference(shapeObj *shape1, shapeObj *shape2)
   g2 = (GEOSGeom) shape2->geometry;
   if(!g2) return NULL;
 
-  g3 = GEOSDifference_r(handle,g1, g2);
+  g3 = GEOSDifference_r(handle, g1, g2);
   return msGEOSGeometry2Shape(g3);
 #else
   msSetError(MS_GEOSERR, "GEOS support is not available.", "msGEOSDifference()");
@@ -1118,10 +1118,189 @@ shapeObj *msGEOSSymDifference(shapeObj *shape1, shapeObj *shape2)
   g2 = (GEOSGeom) shape2->geometry;
   if(!g2) return NULL;
 
-  g3 = GEOSSymDifference_r(handle,g1, g2);
+  g3 = GEOSSymDifference_r(handle, g1, g2);
   return msGEOSGeometry2Shape(g3);
 #else
   msSetError(MS_GEOSERR, "GEOS support is not available.", "msGEOSSymDifference()");
+  return NULL;
+#endif
+}
+
+shapeObj *msGEOSLineMerge(shapeObj *shape)
+{
+#ifdef USE_GEOS
+  GEOSGeom g1, g2;
+  GEOSContextHandle_t handle = msGetGeosContextHandle();
+
+  if(!shape) return NULL;
+  if(shape->type != MS_SHAPE_LINE) return NULL;
+
+  if(!shape->geometry) /* if no geometry for the shape then build one */
+    shape->geometry = (GEOSGeom) msGEOSShape2Geometry(shape);
+  g1 = (GEOSGeom) shape->geometry;
+  if(!g1) return NULL;
+
+  g2 = GEOSLineMerge_r(handle, g1);
+  return msGEOSGeometry2Shape(g2);
+#else
+  msSetError(MS_GEOSERR, "GEOS support is not available.", "msGEOSLineMerge()");
+  return NULL;
+#endif
+}
+
+shapeObj *msGEOSDelaunayTriangulation(shapeObj *shape, double tolerance, int onlyEdges)
+{
+  GEOSGeom g1, g2;
+  GEOSContextHandle_t handle = msGetGeosContextHandle();
+
+  if(!shape) return NULL;
+
+  if(!shape->geometry) /* if no geometry for the shape then build one */
+    shape->geometry = (GEOSGeom) msGEOSShape2Geometry(shape);
+  g1 = (GEOSGeom) shape->geometry;
+  if(!g1) return NULL;
+
+  g2 = GEOSDelaunayTriangulation_r(handle, g1, tolerance, onlyEdges);
+  return msGEOSGeometry2Shape(g2);
+}
+
+shapeObj *msGEOSVoronoiDiagram(shapeObj *shape, double tolerance, int onlyEdges)
+{
+#if defined(USE_GEOS) && GEOS_VERSION_MAJOR >= 3 && GEOS_VERSION_MINOR >= 5
+  GEOSGeom g1, g2;
+  GEOSContextHandle_t handle = msGetGeosContextHandle();
+
+  if(!shape) return NULL;
+
+  if(!shape->geometry) /* if no geometry for the shape then build one */
+    shape->geometry = (GEOSGeom) msGEOSShape2Geometry(shape);
+  g1 = (GEOSGeom) shape->geometry;
+  if(!g1) return NULL;
+
+  g2 = GEOSVoronoiDiagram_r(handle, g1, NULL, tolerance, onlyEdges);
+  return msGEOSGeometry2Shape(g2);
+#else
+  msSetError(MS_GEOSERR, "GEOS support is not available or GEOS version is not 3.5 or higher.", "msGEOSVoronoiDiagram()");
+  return NULL;
+#endif
+}
+
+#define COMPARE_POINTS(a,b) (((a).x!=(b).x || (a).y!=(b).y)?MS_FALSE:MS_TRUE)
+
+static shapeObj *prune(shapeObj *shape1)
+{
+  int i, j;
+  shapeObj *shape2, *shape3;
+  char *start, *end; // counters
+
+  // fprintf(stderr, "    (before) shape1 numlines: %d\n", shape1->numlines);
+  start = (char *) calloc(shape1->numlines, sizeof(char));
+  end = (char *) calloc(shape1->numlines, sizeof(char));
+
+  for(i=0; i<shape1->numlines; i++) {
+    start[i]++;
+    end[i]++;
+
+    for(j=i+1; j<shape1->numlines; j++) {
+      if(COMPARE_POINTS(shape1->line[i].point[0], shape1->line[j].point[0])) {
+        start[i]++;
+        start[j]++;
+      } else if(COMPARE_POINTS(shape1->line[i].point[0], shape1->line[j].point[shape1->line[j].numpoints-1])) {
+        start[i]++;
+	end[j]++;
+      }
+      if(COMPARE_POINTS(shape1->line[i].point[shape1->line[i].numpoints-1], shape1->line[j].point[0])) { 
+        end[i]++;
+        start[j]++;
+      } else if(COMPARE_POINTS(shape1->line[i].point[shape1->line[i].numpoints-1], shape1->line[j].point[shape1->line[j].numpoints-1])) {
+	end[i]++;
+	end[j]++;
+      }
+    }
+  }
+
+  shape2 = (shapeObj *) malloc(sizeof(shapeObj));
+  MS_CHECK_ALLOC(shape2, sizeof(shapeObj), NULL);
+  msInitShape(shape2);
+  shape2->type = MS_SHAPE_LINE;
+
+  for(i=0; i<shape1->numlines; i++) {
+    if(start[i] > 1 && end[i] > 1) msAddLine(shape2, &shape1->line[i]);
+  }
+  // fprintf(stderr, "    (after) shape2 numlines: %d\n", shape2->numlines);
+
+  shape3 = msGEOSLineMerge(shape2);
+
+  msFreeShape(shape2);
+  msFree(start);
+  msFree(end);
+
+  return shape3;
+}
+
+static int keepEdge(lineObj *segment, shapeObj *polygon)
+{
+  int i,j;
+
+  if(msIntersectPointPolygon(&segment->point[0], polygon) != MS_TRUE) return MS_FALSE;
+  if(msIntersectPointPolygon(&segment->point[1], polygon) != MS_TRUE) return MS_FALSE;
+
+  for(i=0; i<polygon->numlines; i++)
+    for(j=1; j<polygon->line[i].numpoints; j++)
+      if(msIntersectSegments(&(segment->point[0]), &(segment->point[1]), &(polygon->line[i].point[j-1]), &(polygon->line[i].point[j])) ==  MS_TRUE)
+    	return(MS_FALSE);
+
+  return(MS_TRUE);
+}
+
+shapeObj *msGEOSSkeletonize(shapeObj *shape, int depth)
+{
+#if defined(USE_GEOS) && GEOS_VERSION_MAJOR >= 3 && GEOS_VERSION_MINOR >= 5 
+  int i, d;
+  shapeObj *shape2, *shape3;
+ 
+  int numlines;
+
+  if(!shape) return NULL;
+  if(shape->type != MS_SHAPE_POLYGON) return NULL;
+
+  shape2 = msGEOSVoronoiDiagram(shape, 0.0, MS_TRUE);
+  if(!shape2) {
+    return NULL;
+  }
+
+  // process the edges
+  shape3 = (shapeObj *) malloc(sizeof(shapeObj));
+  MS_CHECK_ALLOC(shape3, sizeof(shapeObj), NULL);
+  msInitShape(shape3);
+  shape3->type = MS_SHAPE_LINE;
+
+  for(i=0; i<shape2->numlines; i++) {
+    if(keepEdge(&shape2->line[i], shape) == MS_TRUE) msAddLine(shape3, &shape2->line[i]);
+  }
+  msFreeShape(shape2);
+
+  shape2 = msGEOSLineMerge(shape3);
+  msFreeShape(shape3);
+
+  d = 0;
+  numlines = shape2->numlines;
+  while(shape2->numlines > 2 && (depth == -1 || d < depth)) { // two disconnected lines or there'd be just one, so no need to go any further
+    shape3 = prune(shape2);
+    if(shape3 == NULL) break; // to much de-dangling, revert
+
+    msFreeShape(shape2);
+    shape2 = shape3; // re-point
+    shape3 = NULL;
+
+    if(shape2->numlines == numlines) break; // no improvement, bail
+    numlines = shape2->numlines;
+    d++;
+  }
+
+  return shape2;
+#else
+  msSetError(MS_GEOSERR, "GEOS support is not available or GEOS version is not 3.5 or higher.", "msGEOSSkeletonize()");
   return NULL;
 #endif
 }
