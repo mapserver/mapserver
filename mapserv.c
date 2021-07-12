@@ -149,7 +149,14 @@ int main(int argc, char *argv[])
   int sendheaders = MS_TRUE;
   struct mstimeval execstarttime, execendtime;
   struct mstimeval requeststarttime, requestendtime;
-  mapservObj* mapserv = NULL;
+  mapservObj  *mapserv = NULL;
+  configObj *config = NULL;
+
+  config = msLoadConfig(NULL); // is the right spot to do this?
+  if(config == NULL) {
+    msCGIWriteError(mapserv);
+    exit(0);
+  }
 
   /* -------------------------------------------------------------------- */
   /*      Initialize mapserver.  This sets up threads, GD and GEOS as     */
@@ -158,21 +165,12 @@ int main(int argc, char *argv[])
   if( msSetup() != MS_SUCCESS ) {
     msCGIWriteError(mapserv);
     msCleanup();
+    msFreeConfig(config);
     exit(0);
   }
 
   if(msGetGlobalDebugLevel() >= MS_DEBUGLEVEL_TUNING)
     msGettimeofday(&execstarttime, NULL);
-
-  /* push high-value ENV vars into the CPL global config - primarily for IIS/FastCGI */
-  const char* const apszEnvVars[] = { 
-    "CURL_CA_BUNDLE", "MS_MAPFILE", "MS_MAP_NO_PATH", "MS_MAP_PATTERN", "MS_MAP_ENV_PATTERN",
-    "MS_MAP_BAD_PATTERN", "MS_MAP_ENV_BAD_PATTERN",
-     NULL /* guard */ };
-  for( int i = 0; apszEnvVars[i] != NULL; ++i ) {
-    const char* value = getenv(apszEnvVars[i]);
-    if(value) CPLSetConfigOption(apszEnvVars[i], value);
-  }
 
   /* -------------------------------------------------------------------- */
   /*      Process arguments.  In normal use as a cgi-bin there are no     */
@@ -276,7 +274,7 @@ int main(int argc, char *argv[])
       goto end_request;
     }
 
-    mapserv->map = msCGILoadMap(mapserv);
+    mapserv->map = msCGILoadMap(mapserv, config);
     if(!mapserv->map) {
       msCGIWriteError(mapserv);
       goto end_request;
@@ -327,6 +325,7 @@ end_request:
             (execstarttime.tv_sec+execstarttime.tv_usec/1.0e6) );
   }
   msCleanup();
+  msFreeConfig(config);
 
 #ifdef _WIN32
   /* flush pending writes to stdout */
